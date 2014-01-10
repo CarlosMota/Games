@@ -1,7 +1,0 @@
-INDEX VERSION 1.3+C:\Users\Carlos\Documents\GitHub\Games\.metadata\.plugins\org.eclipse.wst.jsdt.core\indexes
-885499587.index
-3982690143.index
-3816836419.index
-4205656252.index
-1077096679.index
-3517755451.index
