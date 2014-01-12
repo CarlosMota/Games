@@ -20,7 +20,7 @@
     
     <body onload="init()">	        
        	<canvas id="canvas" width="600" height="480">
-       		Navegador nÃ£o compatÃ­vel com HTML5 Canvas
+       		Navegador não compatível com HTML5 Canvas
        	</canvas>  
        	
         
@@ -34,13 +34,13 @@
         
         
         <script>
-            // VariÃ¡veis globais utilizadas no jogo
+            // Variáveis globais utilizadas no jogo
             var canvas, context, barraWidth, barraHeight, jogadorPosX, jogadorPosY, teclaEsquerdaPressionada, teclaDireitaPressionada, oponentePosX, 
                    oponentePosY, oponenteParaCima, bolaRaio, bolaPosX, bolaPosY, bolaParaDireita, bolaAngulo, bolaTempo,
                    velocidadeJogador, velocidadeOponente, velocidadeBola, pontosJogador, pontosOponente, totalWidth, totalHeigh,
                    bricks, bricksPerRow, bricksHeight, brickWidth;           
             
-            // MÃ©todo para iniciar o jogo, executado no onload da tag body
+            // Método para iniciar o jogo, executado no onload da tag body
             function init() {
             	canvas = document.getElementById("canvas");// procura o canvas
 				context = canvas.getContext("2d");// recupera o contexto 2d
@@ -56,7 +56,7 @@
 				oponenteParaCima = false;
 				bolaRaio = 10;
 				bolaPosX = canvas.width / 2;
-				bolaPosY = canvas.height / 2;
+				bolaPosY = canvas.height - barraHeight;
 				bolaParaDireita = false;
 				bolaAngulo = Math.floor(Math.random() * 21) - 10;
 				bolaTempo = 0;
@@ -77,32 +77,72 @@
 	            brickHeight = 20;
 	            brickWidth = canvas.width/bricksPerRow;
 				                
-				document.addEventListener('keyleft', keyLeft, false);// adiciona evento para keyup
-				document.addEventListener('keyright', keyRight, false);// adiciona evento para keydown
-				setInterval(gameLoop, 30);// chama a function gameLoop a cada 30 frames
-            }
-            
-			function keyRight(e) {
-				if (e.keyCode == 37) { // up
-					teclaEsquerdaPressionada = true;
-				}
-				else if (e.keyCode == 39) { // down
-                	teclaDireitaPressionada = true;
-				}
+	            document.addEventListener('keyup', keyUp, false);// adiciona evento para keyup
+                document.addEventListener('keydown', keyDown, false);// adiciona evento para keydown
+                setInterval(gameLoop, 30);// chama a function gameLoop a cada 30 frames
+			}
+
+        	function keyDown(e) {
+                if (e.keyCode == 37) { // up
+                        teclaEsquerdaPressionada = true;
+                }
+                else if (e.keyCode == 39) { // down
+        			teclaDireitaPressionada = true;
+                }
+        	}
+        
+			function keyUp(e) {
+    			if (e.keyCode == 37) { // up
+            		teclaEsquerdaPressionada = false; // jogador soltou tecla cima
+    			}
+    			else if (e.keyCode == 39) { // down
+            		teclaDireitaPressionada = false; // jogador soltou tecla baixo
+    			}
 			}
                         
-            function keyLeft(e) {
-                    if (e.keyCode == 37) { // up
-                            teclaEsquerdaPressionada = false; // jogador soltou tecla cima
-                    }
-                    else if (e.keyCode == 39) { // down
-                            teclaDireitaPressionada = false; // jogador soltou tecla baixo
-                    }
-            }
-              
+                         
             function gameLoop() {         
 	            // Desenha tudo na tela
-	            context.clearRect(0, 0, canvas.width, canvas.height);// limpa a tela antes de desenhar           
+	            context.clearRect(0, 0, canvas.width, canvas.height);// limpa a tela antes de desenhar
+
+			if (teclaDireitaPressionada!=teclaEsquerdaPressionada) { // se o jogador estiver pressionando a tecla baixo ou cima
+				if (teclaEsquerdaPressionada) { // se for para cima...
+					if (jogadorPosX > 0) { // se não sair da tela...
+						jogadorPosX -= velocidadeJogador;// muda a posição
+					}
+				}
+				else { // se for para baixo...
+					if (jogadorPosX < (canvas.width - barraWidth)) {// se não sair da tela...
+						jogadorPosX += velocidadeJogador;// muda a posição
+					}
+				}
+			}
+
+			bolaPosY -= velocidadeBola;// movemos a bola para cima ou para baixo, de acordo com o cáculo acima
+            
+            bolaPosX += bolaAngulo;
+              
+            if ((bolaPosX <= -bolaRaio) || (bolaPosX > canvas.width)) {// se a bola saiu da tela...
+                if (bolaTempo >= 50) {// se so tempo de deixar a bola invisível passou...
+                    if (bolaPosX <= -bolaRaio)  {// se a bola saiu na esquerda...
+                        pontosOponente++;// ponto do oponente!
+                    }
+                    else {// se a bola saiu na direita...
+                        pontosJogador++;// ponto do jogador!
+                    }
+                
+                    document.getElementById('morte').play();
+                
+                    bolaPosX = jogadorPosX + barraWidth/2;// posiciona a bola no meio da tela
+                    bolaPosY = canvas.height - barraHeight*2;// posiciona a bola no meio da tela
+                    bolaParaDireita = false;// faz ela ir em direção ao jogador
+                    bolaAngulo = Math.floor(Math.random() * 21) - 10;// faz a bola ir para uma direção aleatória
+                    bolaTempo = 0;// zera o tempo de deixar a bola invisível e a coloca em jogo novamente
+                }
+                else {// se o tempo de deixar a bola invisível ainda não passou...
+                    bolaTempo++;// continuamos contando até 50
+                }
+            }                          
 	           
 	            fillBrick();
 	            player();
@@ -146,7 +186,7 @@
 			 
 			    }
 			    if (type){			        
-			        context.fillRect(x*brickWidth,y*brickHeight,brickWidth,brickHeight);				                
+			        context.fillRect(x*brickWidth,y*brickHeight + 3*brickHeight, brickWidth,brickHeight);				                
 			    } 
 			    
 			}   
@@ -160,7 +200,7 @@
 			// Bola
 			function ball(){				
 	            context.beginPath();// inicia o modo de desenho
-	            context.arc(bolaPosX, bolaPosY, bolaRaio, 0, Math.PI * 2, true); // desenha o cÃ­rculo desejado com as coordenadas no centro.
+	            context.arc(bolaPosX, bolaPosY, bolaRaio, 0, Math.PI * 2, true); // desenha o círculo desejado com as coordenadas no centro.
 	            context.closePath();// finaliza o caminho (opcional)
 	            context.fillStyle = "red";
 	            context.fill();
@@ -168,20 +208,20 @@
 
 			// Placar
 			function scoreBoard(){	            
-	            var pontosA = pontosJogador;// variÃ¡vel temporÃ¡ria para nÃ£o alterar pontosJogador
-	            var pontosB = pontosOponente;// variÃ¡vel temporÃ¡ria para nÃ£o alterar pontosOponente
+	            var pontosA = pontosJogador;// variável temporária para não alterar pontosJogador
+	            var pontosB = pontosOponente;// variável temporária para não alterar pontosOponente
 	            
-	            if (pontosA < 10) {// se o nÃºmero de pontos for menor que 10, colocamos o zero Ã¡ esquerda
+	            if (pontosA < 10) {// se o número de pontos for menor que 10, colocamos o zero á esquerda
 	                pontosA = "0" + pontosA;
 	            }
 	            
-	            if (pontosB < 10) {// se o nÃºmero de pontos for menor que 10, colocamos o zero Ã¡ esquerda
+	            if (pontosB < 10) {// se o número de pontos for menor que 10, colocamos o zero á esquerda
 	                pontosB = "0" + pontosB;
 	            }
 	            
 	            context.font = "42pt Helvetica";// tamanho e fonte para desenhar o texto
 	            context.fillStyle = "#F00000";// cor preta (opcional)
-	            context.fillText(pontosA + " " + pontosB, (canvas.width / 2) - 70, 50); // escreve texto na tela na posiÃ§Ã£o desejada
+	            context.fillText(pontosA + " " + pontosB, (canvas.width / 2) - 70, 50); // escreve texto na tela na posição desejada
 			}
 			
 
