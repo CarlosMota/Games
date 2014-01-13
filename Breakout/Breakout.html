@@ -37,8 +37,8 @@
             // Variáveis globais utilizadas no jogo
             var canvas, context, barraWidth, barraHeight, jogadorPosX, jogadorPosY, teclaEsquerdaPressionada, teclaDireitaPressionada, oponentePosX, 
                    oponentePosY, oponenteParaCima, bolaRaio, bolaPosX, bolaPosY, bolaParaDireita, bolaAngulo, bolaTempo,
-                   velocidadeJogador, velocidadeOponente, velocidadeBola, pontosJogador, pontosOponente, totalWidth, totalHeigh, 
-				   bricksPerRow, bricksHeight, bricksWidth, bolaDeltaX, bolaDeltaY;
+                   velocidadeJogador, velocidadeBola, pontosJogador, pontosOponente, totalWidth, totalHeigh, 
+				   bricksPerRow, bricksHeight, bricksWidth, bolaDeltaX, bolaDeltaY, bolaDirecaoX, bolaDirecaoY;
 
 			var bricks = [[1,1,1,1,1,1,1,1],[2,2,2,2,2,2,2,2],[3,3,3,3,3,3,3,3],[4,4,4,4,4,4,4,4],[5,5,5,5,5,5,5,5],[6,6,6,6,6,6,6,6]];			
             
@@ -107,14 +107,20 @@
                          
             function gameLoop() {         
 	            // Desenha tudo na tela
+	            recalcularDirecao();
 	            context.clearRect(0, 0, canvas.width, canvas.height);// limpa a tela antes de desenhar
-	           
+	            colidirParede();
+	            colisaoTijolo();
+	            colisaoBase();
 	            fillBrick();
+				scoreBoard();
 	            player();
 	            ball();
-	            scoreBoard();
-				moverJogador();
-				moverBola();
+	            moverJogador();
+				//moverBola();
+				
+	            
+				
 			}
 			
 			function moverJogador(){
@@ -132,37 +138,10 @@
 					}
 				}
 			}
+			
+			
 
-			function moverBola(){
-			
-				if(bolaPosY + bolaDeltaY - bolaRaio < 0 || colisaoYComTijolo()){
-					bolaDeltaY = -bolaDeltaY;
-					document.getElementById('toque').play();
-				}
-				
-				
-				if(bolaPosY+bolaDeltaY+bolaRaio > canvas.height+barraHeight)
-				{
-					endGame();
-				}
-				
-				if((bolaPosX + bolaDeltaX - bolaRaio < 0) || (bolaPosX + bolaDeltaX + bolaRaio > canvas.width) || (colisaoXComTijolo())){
-					bolaDeltaX = -bolaDeltaX;
-					//bolaDeltaY = bolaDeltaY;
-					document.getElementById('toque').play();
-				}
-				
-				if(bolaPosY + bolaDeltaY + bolaRaio > jogadorPosY){
-					if(bolaPosX + bolaDeltaX >= jogadorPosX && bolaPosX + bolaDeltaX < jogadorPosX + barraWidth){
-						bolaDeltaY = - bolaDeltaY;
-						document.getElementById('toque').play();
-					}
-				}
-				
-				bolaPosX = bolaPosX + bolaDeltaX;
-				bolaPosY = bolaPosY + bolaDeltaY;
-			
-            }                          
+			                 
 			
 			
 			// Tijolos
@@ -211,6 +190,8 @@
 	            context.fillStyle = "#D2691E";
 	            context.fillRect(jogadorPosX, jogadorPosY, barraWidth, barraHeight);//desenha jogador
 			}
+			
+			      
 
 			// Bola
 			function ball(){				
@@ -239,6 +220,32 @@
 	            context.fillText(pontosA + " " + pontosB, (canvas.width / 2) - 70, 50); // escreve texto na tela na posição desejada
 			}
 			
+				function moverBola(){
+				
+				if( /*bolaPosY - bolaRaio < 0 ||*/ colisaoTijolo()){
+					bolaDeltaY = -bolaDeltaY;
+				}
+				
+				if(bolaPosX - bolaRaio < 0||bolaPosX + bolaRaio > canvas.width || colisaoXComTijolo()){
+					bolaDeltaX = - bolaDeltaX;
+				}
+				
+				if(bolaPosY + bolaDeltaY + bolaRaio > jogadorPosY){
+					if(bolaPosX + bolaDeltaX >= jogadorPosX && bolaPosX + bolaDeltaX < jogadorPosX + barraWidth){
+						bolaDeltaY = - bolaDeltaY;
+						document.getElementById('toque').play();
+					}
+				}
+				
+				
+			
+            }   
+				
+			function recalcularDirecao() {
+				bolaPosX += bolaDeltaX;
+				bolaPosY += bolaDeltaY;
+			}
+			
 			//colisões
 			function apagarTijolo(i,j) {
 				bricks[i][j] = 0;
@@ -246,55 +253,104 @@
 				document.getElementById('toque').play();
 			}
 			
+			function colidirParede() {
+				if(bolaPosX - bolaRaio <= 0){
+					bolaDeltaX *= -1;
+				}
+				
+				if(bolaPosX + bolaRaio >= canvas.width -1){
+					bolaDeltaX *= -1;
+				}
+				
+				if(bolaPosY - bolaRaio <= 0){
+					bolaDeltaY *= -1;
+				}		
+				
+			}
 			
-			function colisaoXComTijolo(){
+			function colisaoBase() {
+				if(bolaPosX + bolaRaio >= jogadorPosX && bolaPosX - bolaRaio <= jogadorPosX+barraWidth){
+					if(bolaPosY + bolaRaio >= jogadorPosY && bolaPosY + bolaRaio < jogadorPosY+barraHeight){
+						var dir = bolaPosX - (jogadorPosX+(barraWidth/2));
+						dir /= (barraWidth/2);
+						bolaDeltaX = dir*(velocidadeBola*0.75);
+						bolaDeltaY = -(velocidadeBola-Math.abs(dir));
+					}
+				}
+			}
+			
+			
+			
+			
+			
+			/*function colisaoXComTijolo(){
 				var tocouX = false;
+				
 				for(var i = 0; i < bricks.length; i++){
 					for(var j = 0; j < bricks[i].length; j++){
 						if(bricks[i][j]){
-						//console.log("brick i = "+i+" j = "+j);
 							var tijoloX = j * bricksWidth;
-							var tijoloY = i * bricksHeight;
-							if(
-									((bolaPosX+bolaDeltaX+bolaRaio >= tijoloX)&&(bolaPosX+bolaRaio <= tijoloX))//Tocando a esquesda
-									||
-									((bolaPosX + bolaDeltaX - bolaRaio <= tijoloX+bricksWidth)&&(bolaDeltaX - bolaRaio >= tijoloX + bricksWidth))//tocando a direita
-									){
-								if((bolaPosX+bolaDeltaY - bolaRaio <= tijoloY + bricksHeight)&&
-										(bolaPosY+bolaDeltaX+bolaRaio >= tijoloY)){
-											apagarTijolo(i, j);
-											tocouX = true;
-										}
+							var tijoloY = i * bricksWidth;
+							if((bolaPosX + bolaRaio <= tijoloX)||(bolaPosX - bolaRaio >= tijoloX + bricksWidth)){
+								if((bolaPosY - bolaRaio <= tijoloY + bricksHeight)){
+									apagarTijolo(i, j);
+									tocouX;
+								}
 							}
 						}
 					}
 				}
 				return tocouX;
-			}
+			}*/
 			
-			function colisaoYComTijolo(){
+			function colisaoTijolo(){
 				var tocouY = false;
 				for(var i = 0; i < bricks.length; i++){
 					for(var j = 0; j < bricks[i].length; j++){
 						if(bricks[i][j]){
-							//console.log("brick i = "+i+" j = "+j);
+							
 							//console.log("bricksWidth = "+bricksWidth);
 							//console.log("bricksHeight = "+bricksHeight);
 							var tijoloX = j * bricksWidth;
 							//console.log("tijoloX ="+tijoloX);
 							var tijoloY = i * bricksHeight;
 							//console.log("tijoloy ="+tijoloY);
-							if(
-									((bolaPosY + bolaDeltaY - bolaRaio <= tijoloY + bricksHeight)&&
-											(bolaPosY - bolaRaio >= tijoloY + bricksHeight))
-									||
-									((bolaPosY + bolaDeltaY + bolaRaio >= tijoloY)&&
-											(bolaPosY + bolaRaio <= tijoloY))){
-								
-								if(bolaPosX + bolaDeltaX + bolaRaio >= tijoloX &&
-										bolaPosX + bolaDeltaX - bolaRaio <= tijoloX + bricksWidth){
+							if((bolaPosY + bolaDeltaY - bolaRaio < tijoloY+bricksHeight)&&
+								(bolaPosY + bolaDeltaX +bolaRaio > tijoloY)){
+								if(bolaPosX + bolaDeltaX - bolaRaio < tijoloX +bricksWidth && bolaPosX + bolaDeltaY + bolaRaio > tijoloX)
+								{
+									console.log("bola pos Y = "+bolaPosY);
+									console.log("bola pos x = "+bolaPosX);
+									console.log("tijolo Y = "+tijoloY);
+									console.log("tijolo x = "+tijoloX);
+									console.log("tijolo y + altura = "+(tijoloY+bricksHeight));
+									console.log("tijolo x + largura = "+(tijoloX +bricksWidth));
+									var distX1 = Math.abs((bolaPosX-bolaRaio)-(tijoloX+bricksWidth));
+									var distX2 = Math.abs((bolaPosX+bolaRaio)-(tijoloX));
+									var distY1 = Math.abs((bolaPosY-bolaRaio)-(tijoloY+bricksHeight));
+									var distY2 = Math.abs((bolaPosY+bolaRaio)-(tijoloY));
+									
+									if(distX2 < distX1)
+										distX1 = distX2;
+									if(distY2 < distY1)
+										distY1 = distY2;
+									
+									if(distX1 == distY1){
+										bolaDeltaY *=-1;
+										bolaDeltaX *=-1;
+									}
+									
+									if(distX1 < distY1){
+										bolaDeltaX *= -1;
+									}else{
+										bolaDeltaY *= -1;
+									}
+									console.log("i = "+i+" j = "+j)
 									apagarTijolo(i, j);
 									tocouY = true;
+									//j = 0;
+									//return;
+									
 								}
 							}
 						}
