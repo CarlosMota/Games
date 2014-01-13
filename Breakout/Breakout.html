@@ -37,8 +37,10 @@
             // Variáveis globais utilizadas no jogo
             var canvas, context, barraWidth, barraHeight, jogadorPosX, jogadorPosY, teclaEsquerdaPressionada, teclaDireitaPressionada, oponentePosX, 
                    oponentePosY, oponenteParaCima, bolaRaio, bolaPosX, bolaPosY, bolaParaDireita, bolaAngulo, bolaTempo,
-                   velocidadeJogador, velocidadeOponente, velocidadeBola, pontosJogador, pontosOponente, totalWidth, totalHeigh,
-                   bricks, bricksPerRow, bricksHeight, brickWidth;           
+                   velocidadeJogador, velocidadeOponente, velocidadeBola, pontosJogador, pontosOponente, totalWidth, totalHeigh, 
+				   bricksPerRow, bricksHeight, bricksWidth, bolaDeltaX, bolaDeltaY;
+
+			var bricks = [[1,1,1,1,1,1,1,1],[2,2,2,2,2,2,2,2],[3,3,3,3,3,3,3,3],[4,4,4,4,4,4,4,4],[5,5,5,5,5,5,5,5],[6,6,6,6,6,6,6,6]];			
             
             // Método para iniciar o jogo, executado no onload da tag body
             function init() {
@@ -56,7 +58,7 @@
 				oponenteParaCima = false;
 				bolaRaio = 10;
 				bolaPosX = canvas.width / 2;
-				bolaPosY = canvas.height - barraHeight;
+				bolaPosY = canvas.height / 2;
 				bolaParaDireita = false;
 				bolaAngulo = Math.floor(Math.random() * 21) - 10;
 				bolaTempo = 0;
@@ -71,11 +73,13 @@
 				totalWidth = canvas.width;
 				totalHeight = canvas.height;
 				auxBrick = tetoHeight;
+				bolaDeltaX = - 2;
+				bolaDeltaY=  4;
 				
-				bricks = [[1,1,1,1,1,1,1,1],[2,2,2,2,2,2,2,2],[3,3,3,3,3,3,3,3],[4,4,4,4,4,4,4,4],[5,5,5,5,5,5,5,5],[6,6,6,6,6,6,6,6]];
+				
 				bricksPerRow = 8;                               
-	            brickHeight = 20;
-	            brickWidth = canvas.width/bricksPerRow;
+	            bricksHeight = 20;
+	            bricksWidth = canvas.width/bricksPerRow;
 				                
 	            document.addEventListener('keyup', keyUp, false);// adiciona evento para keyup
                 document.addEventListener('keydown', keyDown, false);// adiciona evento para keydown
@@ -104,51 +108,62 @@
             function gameLoop() {         
 	            // Desenha tudo na tela
 	            context.clearRect(0, 0, canvas.width, canvas.height);// limpa a tela antes de desenhar
-
-			if (teclaDireitaPressionada!=teclaEsquerdaPressionada) { // se o jogador estiver pressionando a tecla baixo ou cima
-				if (teclaEsquerdaPressionada) { // se for para cima...
-					if (jogadorPosX > 0) { // se não sair da tela...
-						jogadorPosX -= velocidadeJogador;// muda a posição
-					}
-				}
-				else { // se for para baixo...
-					if (jogadorPosX < (canvas.width - barraWidth)) {// se não sair da tela...
-						jogadorPosX += velocidadeJogador;// muda a posição
-					}
-				}
-			}
-
-			bolaPosY -= velocidadeBola;// movemos a bola para cima ou para baixo, de acordo com o cáculo acima
-            
-            bolaPosX += bolaAngulo;
-              
-            if ((bolaPosX <= -bolaRaio) || (bolaPosX > canvas.width)) {// se a bola saiu da tela...
-                if (bolaTempo >= 50) {// se so tempo de deixar a bola invisível passou...
-                    if (bolaPosX <= -bolaRaio)  {// se a bola saiu na esquerda...
-                        pontosOponente++;// ponto do oponente!
-                    }
-                    else {// se a bola saiu na direita...
-                        pontosJogador++;// ponto do jogador!
-                    }
-                
-                    document.getElementById('morte').play();
-                
-                    bolaPosX = jogadorPosX + barraWidth/2;// posiciona a bola no meio da tela
-                    bolaPosY = canvas.height - barraHeight*2;// posiciona a bola no meio da tela
-                    bolaParaDireita = false;// faz ela ir em direção ao jogador
-                    bolaAngulo = Math.floor(Math.random() * 21) - 10;// faz a bola ir para uma direção aleatória
-                    bolaTempo = 0;// zera o tempo de deixar a bola invisível e a coloca em jogo novamente
-                }
-                else {// se o tempo de deixar a bola invisível ainda não passou...
-                    bolaTempo++;// continuamos contando até 50
-                }
-            }                          
 	           
 	            fillBrick();
 	            player();
 	            ball();
-	            scoreBoard();	       	            	            	            
-			}			         	
+	            scoreBoard();
+				moverJogador();
+				moverBola();
+			}
+			
+			function moverJogador(){
+				
+				if (teclaDireitaPressionada!=teclaEsquerdaPressionada) { // se o jogador estiver pressionando a tecla baixo ou cima
+					if (teclaEsquerdaPressionada) { // se for para cima...
+						if (jogadorPosX > 0) { // se n?o sair da tela...
+							jogadorPosX -= velocidadeJogador;// muda a posi??o
+						}
+					}
+					else { // se for para baixo...
+						if (jogadorPosX < (canvas.width - barraWidth)) {// se n?o sair da tela...
+							jogadorPosX += velocidadeJogador;// muda a posi??o
+						}
+					}
+				}
+			}
+
+			function moverBola(){
+			
+				if(bolaPosY + bolaDeltaY - bolaRaio < 0 || colisaoYComTijolo()){
+					bolaDeltaY = -bolaDeltaY;
+					document.getElementById('toque').play();
+				}
+				
+				
+				if(bolaPosY+bolaDeltaY+bolaRaio > canvas.height+barraHeight)
+				{
+					endGame();
+				}
+				
+				if((bolaPosX + bolaDeltaX - bolaRaio < 0) || (bolaPosX + bolaDeltaX + bolaRaio > canvas.width) || (colisaoXComTijolo())){
+					bolaDeltaX = -bolaDeltaX;
+					//bolaDeltaY = bolaDeltaY;
+					document.getElementById('toque').play();
+				}
+				
+				if(bolaPosY + bolaDeltaY + bolaRaio > jogadorPosY){
+					if(bolaPosX + bolaDeltaX >= jogadorPosX && bolaPosX + bolaDeltaX < jogadorPosX + barraWidth){
+						bolaDeltaY = - bolaDeltaY;
+						document.getElementById('toque').play();
+					}
+				}
+				
+				bolaPosX = bolaPosX + bolaDeltaX;
+				bolaPosY = bolaPosY + bolaDeltaY;
+			
+            }                          
+			
 			
 			// Tijolos
 			function fillBrick(){
@@ -181,12 +196,12 @@
 			            context.fillStyle = '#0000FF';
 			            break;			                                         
 			        default:
-			            context.clearRect(x*brickWidth,y*brickHeight,brickWidth,brickHeight);
+			            context.clearRect(x*bricksWidth,y*bricksHeight,bricksWidth,bricksHeight);
 			            break;
 			 
 			    }
 			    if (type){			        
-			        context.fillRect(x*brickWidth,y*brickHeight + 3*brickHeight, brickWidth,brickHeight);				                
+			        context.fillRect(x*bricksWidth,y*bricksHeight + 3*bricksHeight, bricksWidth,bricksHeight);				                
 			    } 
 			    
 			}   
@@ -224,6 +239,77 @@
 	            context.fillText(pontosA + " " + pontosB, (canvas.width / 2) - 70, 50); // escreve texto na tela na posição desejada
 			}
 			
+			//colisões
+			function apagarTijolo(i,j) {
+				bricks[i][j] = 0;
+				pontosJogador += 1;
+				document.getElementById('toque').play();
+			}
+			
+			
+			function colisaoXComTijolo(){
+				var tocouX = false;
+				for(var i = 0; i < bricks.length; i++){
+					for(var j = 0; j < bricks[i].length; j++){
+						if(bricks[i][j]){
+						//console.log("brick i = "+i+" j = "+j);
+							var tijoloX = j * bricksWidth;
+							var tijoloY = i * bricksHeight;
+							if(
+									((bolaPosX+bolaDeltaX+bolaRaio >= tijoloX)&&(bolaPosX+bolaRaio <= tijoloX))//Tocando a esquesda
+									||
+									((bolaPosX + bolaDeltaX - bolaRaio <= tijoloX+bricksWidth)&&(bolaDeltaX - bolaRaio >= tijoloX + bricksWidth))//tocando a direita
+									){
+								if((bolaPosX+bolaDeltaY - bolaRaio <= tijoloY + bricksHeight)&&
+										(bolaPosY+bolaDeltaX+bolaRaio >= tijoloY)){
+											apagarTijolo(i, j);
+											tocouX = true;
+										}
+							}
+						}
+					}
+				}
+				return tocouX;
+			}
+			
+			function colisaoYComTijolo(){
+				var tocouY = false;
+				for(var i = 0; i < bricks.length; i++){
+					for(var j = 0; j < bricks[i].length; j++){
+						if(bricks[i][j]){
+							//console.log("brick i = "+i+" j = "+j);
+							//console.log("bricksWidth = "+bricksWidth);
+							//console.log("bricksHeight = "+bricksHeight);
+							var tijoloX = j * bricksWidth;
+							//console.log("tijoloX ="+tijoloX);
+							var tijoloY = i * bricksHeight;
+							//console.log("tijoloy ="+tijoloY);
+							if(
+									((bolaPosY + bolaDeltaY - bolaRaio <= tijoloY + bricksHeight)&&
+											(bolaPosY - bolaRaio >= tijoloY + bricksHeight))
+									||
+									((bolaPosY + bolaDeltaY + bolaRaio >= tijoloY)&&
+											(bolaPosY + bolaRaio <= tijoloY))){
+								
+								if(bolaPosX + bolaDeltaX + bolaRaio >= tijoloX &&
+										bolaPosX + bolaDeltaX - bolaRaio <= tijoloX + bricksWidth){
+									apagarTijolo(i, j);
+									tocouY = true;
+								}
+							}
+						}
+					}
+				}
+				return tocouY;
+			}
+			
+			function endGame(){
+					clearInterval(gameLoop);
+					bolaPosX = 0;
+					bolaPosY = canvas.height + 100;
+					context.fillText('The End!!!!',canvas.width/2,canvas.height/2);
+				}
+				
 
         </script>
     </body>
