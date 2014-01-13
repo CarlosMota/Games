@@ -20,7 +20,7 @@
     
     <body onload="init()">	        
        	<canvas id="canvas" width="600" height="480">
-       		Navegador não compatível com HTML5 Canvas
+       		Navegador nï¿½o compatï¿½vel com HTML5 Canvas
        	</canvas>  
        	
         
@@ -34,15 +34,14 @@
         
         
         <script>
-            // Variáveis globais utilizadas no jogo
-            var canvas, context, barraWidth, barraHeight, jogadorPosX, jogadorPosY, teclaEsquerdaPressionada, teclaDireitaPressionada, oponentePosX, 
-                   oponentePosY, oponenteParaCima, bolaRaio, bolaPosX, bolaPosY, bolaParaDireita, bolaAngulo, bolaTempo,
-                   velocidadeJogador, velocidadeBola, pontosJogador, pontosOponente, totalWidth, totalHeigh, 
-				   bricksPerRow, bricksHeight, bricksWidth, bolaDeltaX, bolaDeltaY, bolaDirecaoX, bolaDirecaoY;
+            // Variï¿½veis globais utilizadas no jogo
+            var canvas, context, barraWidth, barraHeight, jogadorPosX, jogadorPosY, teclaEsquerdaPressionada, teclaDireitaPressionada, 
+            	bolaRaio, bolaPosX, bolaPosY, bolaParaDireita, bolaAngulo, bolaTempo, velocidadeJogador, velocidadeBola, pontosJogador,
+            	totalWidth, totalHeigh, bricksPerRow, bricksHeight, bricksWidth, bolaDeltaX, bolaDeltaY, bolaDirecaoX, bolaDirecaoY, vidasJogador;
 
 			var bricks = [[1,1,1,1,1,1,1,1],[2,2,2,2,2,2,2,2],[3,3,3,3,3,3,3,3],[4,4,4,4,4,4,4,4],[5,5,5,5,5,5,5,5],[6,6,6,6,6,6,6,6]];			
             
-            // Método para iniciar o jogo, executado no onload da tag body
+            // Mï¿½todo para iniciar o jogo, executado no onload da tag body
             function init() {
             	canvas = document.getElementById("canvas");// procura o canvas
 				context = canvas.getContext("2d");// recupera o contexto 2d
@@ -53,20 +52,15 @@
 				jogadorPosY = canvas.height - barraHeight;
 				teclaEsquerdaPressionada = false;
 				teclaDireitaPressionada = false;
-				oponentePosX = 0;
-				oponentePosY = barraHeight * 3;
-				oponenteParaCima = false;
 				bolaRaio = 10;
-				bolaPosX = canvas.width / 2;
-				bolaPosY = canvas.height / 2;
+				bolaPosY = jogadorPosY - barraHeight;
+				bolaPosX = jogadorPosX + barraWidth/2;
 				bolaParaDireita = false;
 				bolaAngulo = Math.floor(Math.random() * 21) - 10;
 				bolaTempo = 0;
 				velocidadeJogador = 10;
-				velocidadeOponente = 10;
 				velocidadeBola = 5;
 				pontosJogador = 0;
-				pontosOponente = 0;
 				tetoPosX = 0;
 				tetoPosY = 0;
 				tetoHeight = 70;
@@ -75,6 +69,7 @@
 				auxBrick = tetoHeight;
 				bolaDeltaX = - 2;
 				bolaDeltaY=  4;
+				vidasJogador = 3;
 				
 				
 				bricksPerRow = 8;                               
@@ -83,7 +78,7 @@
 				                
 	            document.addEventListener('keyup', keyUp, false);// adiciona evento para keyup
                 document.addEventListener('keydown', keyDown, false);// adiciona evento para keydown
-                setInterval(gameLoop, 30);// chama a function gameLoop a cada 30 frames
+                gameLoop = setInterval(game, 30);// chama a function gameLoop a cada 30 frames
 			}
 
         	function keyDown(e) {
@@ -105,23 +100,34 @@
 			}
                         
                          
-            function gameLoop() {         
+            function game() {         
 	            // Desenha tudo na tela
 	            recalcularDirecao();
 	            context.clearRect(0, 0, canvas.width, canvas.height);// limpa a tela antes de desenhar
 	            colidirParede();
 	            colisaoTijolo();
 	            colisaoBase();
+	            bolaSaiTela();
 	            fillBrick();
 				scoreBoard();
 	            player();
 	            ball();
 	            moverJogador();
+	            endGame();
+	            
 				//moverBola();
 				
 	            
 				
 			}
+			function bolaSaiTela(){
+				if(bolaPosY > canvas.height + bolaRaio*5){
+					bolaPosY = jogadorPosY - barraHeight;
+					bolaPosX = jogadorPosX + barraWidth/2;
+					vidasJogador--;
+				}
+			}
+				
 			
 			function moverJogador(){
 				
@@ -155,6 +161,7 @@
 			
 			// Desenha um tijolo
 			function drawBrick(x,y,type){  
+				
 			    switch(type){
 			        case 1:
 			            context.fillStyle = '#A52A2A';
@@ -175,7 +182,7 @@
 			            context.fillStyle = '#0000FF';
 			            break;			                                         
 			        default:
-			            context.clearRect(x*bricksWidth,y*bricksHeight,bricksWidth,bricksHeight);
+			            context.clearRect(x*bricksWidth,y*bricksHeight + 3*bricksHeight,bricksWidth,bricksHeight);
 			            break;
 			 
 			    }
@@ -196,7 +203,7 @@
 			// Bola
 			function ball(){				
 	            context.beginPath();// inicia o modo de desenho
-	            context.arc(bolaPosX, bolaPosY, bolaRaio, 0, Math.PI * 2, true); // desenha o círculo desejado com as coordenadas no centro.
+	            context.arc(bolaPosX, bolaPosY, bolaRaio, 0, Math.PI * 2, true); // desenha o cï¿½rculo desejado com as coordenadas no centro.
 	            context.closePath();// finaliza o caminho (opcional)
 	            context.fillStyle = "red";
 	            context.fill();
@@ -204,20 +211,22 @@
 
 			// Placar
 			function scoreBoard(){	            
-	            var pontosA = pontosJogador;// variável temporária para não alterar pontosJogador
-	            var pontosB = pontosOponente;// variável temporária para não alterar pontosOponente
+	            var pontos = pontosJogador;// variï¿½vel temporï¿½ria para nï¿½o alterar pontosJogador
+	            var vidas = vidasJogador;// variï¿½vel temporï¿½ria para nï¿½o alterar pontosOponente
 	            
-	            if (pontosA < 10) {// se o número de pontos for menor que 10, colocamos o zero á esquerda
-	                pontosA = "0" + pontosA;
+	            if (pontos < 10) {// se o nï¿½mero de pontos for menor que 10, colocamos o zero ï¿½ esquerda
+	                pontos = "Pontos: 0" + pontos;
+	            }else{
+		            pontos = "Pontos: "+ pontos;
 	            }
-	            
-	            if (pontosB < 10) {// se o número de pontos for menor que 10, colocamos o zero á esquerda
-	                pontosB = "0" + pontosB;
+	            vidas = "Vidas: " + vidas;
+	            if(vidas <= 0){
+		            vidas = "Vidas: " + 0;
 	            }
 	            
 	            context.font = "42pt Helvetica";// tamanho e fonte para desenhar o texto
 	            context.fillStyle = "#F00000";// cor preta (opcional)
-	            context.fillText(pontosA + " " + pontosB, (canvas.width / 2) - 70, 50); // escreve texto na tela na posição desejada
+	            context.fillText(pontos + " " + vidas, 0, 50); // escreve texto na tela na posiï¿½ï¿½o desejada
 			}
 			
 				function moverBola(){
@@ -246,7 +255,7 @@
 				bolaPosY += bolaDeltaY;
 			}
 			
-			//colisões
+			//colisï¿½es
 			function apagarTijolo(i,j) {
 				bricks[i][j] = 0;
 				pontosJogador += 1;
@@ -313,18 +322,18 @@
 							//console.log("bricksHeight = "+bricksHeight);
 							var tijoloX = j * bricksWidth;
 							//console.log("tijoloX ="+tijoloX);
-							var tijoloY = i * bricksHeight;
+							var tijoloY = i * bricksHeight + 3 * bricksHeight;//PosiÃ§Ã£o do tijolo Ã© 3x mais que o seu heigth
 							//console.log("tijoloy ="+tijoloY);
 							if((bolaPosY + bolaDeltaY - bolaRaio < tijoloY+bricksHeight)&&
 								(bolaPosY + bolaDeltaX +bolaRaio > tijoloY)){
 								if(bolaPosX + bolaDeltaX - bolaRaio < tijoloX +bricksWidth && bolaPosX + bolaDeltaY + bolaRaio > tijoloX)
 								{
-									console.log("bola pos Y = "+bolaPosY);
-									console.log("bola pos x = "+bolaPosX);
-									console.log("tijolo Y = "+tijoloY);
-									console.log("tijolo x = "+tijoloX);
-									console.log("tijolo y + altura = "+(tijoloY+bricksHeight));
-									console.log("tijolo x + largura = "+(tijoloX +bricksWidth));
+									//console.log("bola pos Y = "+bolaPosY);
+									//console.log("bola pos x = "+bolaPosX);
+									//console.log("tijolo Y = "+tijoloY);
+									//console.log("tijolo x = "+tijoloX);
+									//console.log("tijolo y + altura = "+(tijoloY+bricksHeight));
+									//console.log("tijolo x + largura = "+(tijoloX +bricksWidth));
 									var distX1 = Math.abs((bolaPosX-bolaRaio)-(tijoloX+bricksWidth));
 									var distX2 = Math.abs((bolaPosX+bolaRaio)-(tijoloX));
 									var distY1 = Math.abs((bolaPosY-bolaRaio)-(tijoloY+bricksHeight));
@@ -345,7 +354,7 @@
 									}else{
 										bolaDeltaY *= -1;
 									}
-									console.log("i = "+i+" j = "+j)
+									//console.log("i = "+i+" j = "+j)
 									apagarTijolo(i, j);
 									tocouY = true;
 									//j = 0;
@@ -360,11 +369,13 @@
 			}
 			
 			function endGame(){
+				if(vidasJogador <=0 || pontosJogador >=48){
 					clearInterval(gameLoop);
 					bolaPosX = 0;
 					bolaPosY = canvas.height + 100;
-					context.fillText('The End!!!!',canvas.width/2,canvas.height/2);
+					context.fillText('The End!!!!',canvas.width/4,canvas.height/2);
 				}
+			}
 				
 
         </script>
